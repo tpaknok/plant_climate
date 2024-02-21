@@ -1,0 +1,65 @@
+plants_db_with_polygon <- read.csv("plants_cleaned_with_polygon.csv")
+plants_db_with_polygon <- plants_db_with_polygon[,-1:-2]
+gc()
+library(terra)
+library(stars)
+Agr <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/EarthEnv/consensus_full_class_7.tif")
+Urb <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/EarthEnv/consensus_full_class_9.tif")
+LC <- c(Agr,Urb)
+#LC2.5 <- aggregate(LC,5)
+start <- Sys.time()
+LC_pts <- terra::extract(LC,plants_db_with_polygon[,c("decimalLongitude","decimalLatitude")])
+end <- Sys.time()
+print(end-start)
+
+plants_db_with_polygon <- cbind(plants_db_with_polygon,LC_pts[,-1])
+colnames(plants_db_with_polygon)[14:15] <- c("Agr","Urb")
+write.csv(plants_db_with_polygon,"plants_final.csv")
+
+####Point, no need run this becoz point record for climatic niches are probelamtic...(not enough records for some species in native distribution)
+
+polygon_clim <- list()
+MAT <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Woldclim/wc2.1_2.5m_bio_1.tif")
+S_Temp <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/WorldClim/wc2.1_2.5m_bio_4.tif")
+MAP <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/WorldClim/wc2.1_2.5m_bio_12.tif")
+S_Prec <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/WorldClim/wc2.1_2.5m_bio_15.tif")
+Arid_mean_5km <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Arid_remake/Arid_mean_5km.tif")
+Arid_sd_5km <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Arid_remake/Arid_sd_5km.tif")
+#Arid_mean_5km <- aggregate(Arid_mean_5km,5)
+#Arid_sd_5km <- aggregate(Arid_sd_5km,5)
+
+clim <- c(MAT,S_Temp,MAP,S_Prec,Arid_mean_5km,Arid_sd_5km)
+clim_pts <- extract(clim,plants_db_with_polygon[,c("decimalLongitude","decimalLatitude")])
+plants_db_with_polygon <- cbind(plants_db_with_polygon,clim_pts[,-1])
+colnames(plants_db_with_polygon)[14:19] <- c("BIO1","BIO4","BIO12","BIO15","Arid_mean","Arid_sd")
+colnames(plants_db_with_polygon)[12:13] <- c("Agr","Urb")
+write.csv(plants_db_with_polygon,"plants_final.csv")
+
+#####Terraclimate probably no need run this if not doing clim niche based on point-bsaed record
+Tmax <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Terraclim/TerraClimate19812010_tmax.nc")
+Tmin <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Terraclim/TerraClimate19812010_tmin.nc")
+P <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Terraclim/TerraClimate19812010_ppt.nc")
+Soil <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Terraclim/TerraClimate19812010_soil.nc")
+PET <- rast("C:/Users/pakno/OneDrive - University of Toronto/Raster/Terraclim/TerraClimate19812010_pet.nc")
+
+Tmonth <- (Tmax+Tmin)/2 #no Tmean in Terraclimate
+
+Tsd <- stdev(Tmonth)
+Tmean <- mean(Tmonth)
+Pmean <- mean(P)
+Psd <- stdev(P)
+PET_mean <- mean(PET)
+PET_sd <- stdev(PET)
+SMmean <- mean(Soil)
+SMsd <- stdev(Soil)
+CMI_mean <- Pmean - PET_mean
+CMI_sd <- stdev(P-PET)
+
+clim <- c(Tsd,Tmean,Pmean,Psd,PET_mean,PET_sd,SMmean,SMsd,CMI_mean,CMI_sd)
+water_related <- c(SMmean,SMsd,CMI_mean,CMI_sd)
+cor(as.data.frame(water_related))
+clim_pts <- extract(clim,plants_db_with_polygon[,c("decimalLongitude","decimalLatitude")])
+plants_db_with_polygon <- cbind(plants_db_with_polygon,clim_pts[,-1])
+colnames(plants_db_with_polygon)[12:13] <- c("Agr","Urb")
+colnames(plants_db_with_polygon)[14:23] <- c("BIO4","BIO1","BIO12","BIO15","PET_mean","PET_sd","SMmean","SMsd","CMI_mean","CMI_sd")
+write.csv(plants_db_with_polygon,"plants_final.csv")
