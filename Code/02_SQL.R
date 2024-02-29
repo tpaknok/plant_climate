@@ -16,7 +16,26 @@ subset_plants <- dbGetQuery(con,
                              OR basisOfRecord = "PRESERVED_SPECIMEN"
                              OR basisOfRecord = "OCCURRENCE"
                              OR basisOfRecord = "MATERIAL_SAMPLE"
-                             OR basisOfRecord = "MATERIAL_CITATION")')
+                             OR basisOfRecord = "MATERIAL_CITATION")
+                             AND species != "NA"')
+
+### species name count! too many for fuzzy-matching!!!
+unique_name <- dbGetQuery(con,
+                            'SELECT species,
+                             COUNT(*)
+                             FROM Plants
+                             WHERE coordinateUncertaintyInMeters <= 1000
+                             AND (basisOfRecord = "HUMAN_OBSERVATION" 
+                             OR basisOfRecord = "PRESERVED_SPECIMEN"
+                             OR basisOfRecord = "OCCURRENCE"
+                             OR basisOfRecord = "MATERIAL_SAMPLE"
+                             OR basisOfRecord = "MATERIAL_CITATION") 
+                             GROUP BY species')
+
+library(WorldFlora)
+WFO.remember("C:/Users/pakno/OneDrive - University of Toronto/GLONAF/classification.csv")
+
+names_unmatched <- unique_name$species[!unique_name$species %in% WFO.data$scientificName]
 
 ### dplyr version (just a part of it) ###
 #subset_plants1 <- plants %>% 

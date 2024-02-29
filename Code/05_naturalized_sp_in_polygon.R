@@ -15,6 +15,7 @@ tdwg3 <- vect("tdwg3/level3.shp")
 tdwg3_list <- NULL
 region_list <- NULL
 seg <-10000
+
 for (i in 1: ceiling(nrow(plants_db_cleaned)/seg)) {
   message(i,"in", ceiling(nrow(plants_db_cleaned)/seg))
   start<- Sys.time()
